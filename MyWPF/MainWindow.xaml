@@ -1,0 +1,306 @@
+﻿<Window x:Class="MyWPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MyWPF"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="300" Background="White">
+    <Grid>
+        <Grid.Resources>
+            <SolidColorBrush x:Key="Foreground" Color="Black"/>
+            <SolidColorBrush x:Key="Background" Color="Transparent"/>
+        </Grid.Resources>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="10*"/>
+            <RowDefinition Height="10*"/>
+            <RowDefinition Height="10*"/>
+            <RowDefinition Height="10*"/>
+            <RowDefinition Height="10*"/>
+            <RowDefinition Height="10*"/>
+            <RowDefinition Height="10*"/>
+            <RowDefinition Height="10*"/>
+            <RowDefinition Height="10*"/>
+            <RowDefinition Height="10*"/>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+            </Grid.ColumnDefinitions>
+             <!--dark/light mode-->
+            <Button Grid.Column="0"
+                Content="Options"
+                Foreground="{StaticResource Foreground}"
+                BorderThickness="0"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="1"
+                Content="Standard"
+                Foreground="{StaticResource Foreground}"
+                BorderThickness="0"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="2"
+                Content="Popout"
+                Foreground="{StaticResource Foreground}"
+                BorderThickness="0"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="3"
+                Content="Reverse"
+                Foreground="{StaticResource Foreground}"
+                BorderThickness="0"
+                Background="{StaticResource Background}"
+                />
+        </Grid>
+        <Grid Grid.Row="1">
+            <TextBlock Name="ChildViewerBlock" Text="{Binding Value}" FontSize="15" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{StaticResource Foreground}"/> </Grid>
+        <Grid Grid.Row="2">
+            <TextBlock Name="MainViewerBlock" Text="{Binding Value}" FontSize="29" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{StaticResource Foreground}"/>
+        </Grid>
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="16*"/>
+                <ColumnDefinition Width="16*"/>
+                <ColumnDefinition Width="16*"/>
+                <ColumnDefinition Width="16*"/>
+                <ColumnDefinition Width="16*"/>
+                <ColumnDefinition Width="16*"/>
+            </Grid.ColumnDefinitions>
+            <Button
+                Content="MC"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button
+                Grid.Column="1"
+                Content="MR"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button
+                Grid.Column="2"
+                Content="M+"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button
+                Grid.Column="3"
+                Content="M-"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button
+                Grid.Column="4"
+                Content="MS"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button
+                Grid.Column="5"
+                Content="M>"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+        </Grid>
+        <Grid Grid.Row="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+            </Grid.ColumnDefinitions>
+            <Button
+                Content="%"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="1"
+                Content="CE"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="2"
+                Content="C"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="3"
+                Content="&lt;X"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+        </Grid>
+        <Grid Grid.Row="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+            </Grid.ColumnDefinitions>
+            <Button
+                Content="1/x"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="1"
+                Content="x^2"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="2"
+                Content="sqrt(x)"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="3"
+                Name="Divide"
+                Content="/"
+                Click="Divide_Click"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+        </Grid>
+        <Grid Grid.Row="6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+            </Grid.ColumnDefinitions>
+            <Button
+                Name="Seven"
+                Click="Seven_Click"
+                Content="7"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="1"
+                Name="Eight"
+                Click="Eight_Click"
+                Content="8"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="2"
+                Name="Nine"
+                Click="Nine_Click"
+                Content="9"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="3"
+                Name="Multiply"
+                Content="x"
+                Click="Multiply_Click"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+        </Grid>
+        <Grid Grid.Row="7">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+            </Grid.ColumnDefinitions>
+            <Button
+                Name="Four"
+                Click="Four_Click"
+                Content="4"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="1"
+                Name="Five"
+                Click="Five_Click"
+                Content="5"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="2"
+                Name="Six"
+                Click="Six_Click"
+                Content="6"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="3"
+                Name="Subtract"
+                Content="-"
+                Click="Subtract_Click"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+        </Grid>
+        <Grid Grid.Row="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+            </Grid.ColumnDefinitions>
+            <Button
+                Name="One"
+                Click="One_Click"
+                Content="1"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="1"
+                Name="Two"
+                Click="Two_Click"
+                Content="2"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="2"
+                Name="Three"
+                Content="3"
+                Click="Three_Click"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="3"
+                Name="Add"
+                Content="+"
+                Click="Add_Click"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+        </Grid>
+        <Grid Grid.Row="9">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+                <ColumnDefinition Width="25*"/>
+            </Grid.ColumnDefinitions>
+            <Button
+                Content="Negate"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="1"
+                Name="Zero"
+                Click="Zero_Click"
+                Content="0"
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="2"
+                Content="."
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+            <Button Grid.Column="3"
+                Content="="
+                Foreground="{StaticResource Foreground}"
+                Background="{StaticResource Background}"
+                />
+        </Grid>
+    </Grid>
+</Window>
