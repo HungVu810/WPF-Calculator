@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MyWPF"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="300" Background="White">
+        Title="MainWindow" Height="450" Width="300" Background="White"
+        KeyDown="Window_KeyDown">
     <Grid>
         <Grid.Resources>
             <SolidColorBrush x:Key="Foreground" Color="Black"/>
@@ -57,9 +58,20 @@
                 />
         </Grid>
         <Grid Grid.Row="1">
-            <TextBlock Name="ChildViewerBlock" Text="{Binding Value}" FontSize="15" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{StaticResource Foreground}"/> </Grid>
+            <TextBlock Name="ChildDisplay"
+                       Text="{Binding Value}"
+                       FontSize="15"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Right"
+                       Foreground="{StaticResource Foreground}"/>
+        </Grid>
         <Grid Grid.Row="2">
-            <TextBlock Name="MainViewerBlock" Text="{Binding Value}" FontSize="29" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{StaticResource Foreground}"/>
+            <TextBlock Name="MainDisplay"
+                       Text="{Binding Value}"
+                       FontSize="29"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Right"
+                       Foreground="{StaticResource Foreground}"/>
         </Grid>
         <Grid Grid.Row="3">
             <Grid.ColumnDefinitions>
@@ -119,12 +131,16 @@
                 Background="{StaticResource Background}"
                 />
             <Button Grid.Column="1"
+                Name="ClearEntry"
                 Content="CE"
+                Click="ClearEntry_Click"
                 Foreground="{StaticResource Foreground}"
                 Background="{StaticResource Background}"
                 />
             <Button Grid.Column="2"
+                Name="Clear"
                 Content="C"
+                Click="Clear_Click"
                 Foreground="{StaticResource Foreground}"
                 Background="{StaticResource Background}"
                 />
@@ -297,7 +313,9 @@
                 Background="{StaticResource Background}"
                 />
             <Button Grid.Column="3"
+                Name="Equal"
                 Content="="
+                Click="Equal_Click"
                 Foreground="{StaticResource Foreground}"
                 Background="{StaticResource Background}"
                 />

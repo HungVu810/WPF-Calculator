@@ -24,10 +24,8 @@ namespace MyWPF
     public class ObservableObject<T> : INotifyPropertyChanged
     {
         private T _value;
-        private void OnPropertyChanged()
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Value"));
-        }
+        // Need to be public to implement the derived interface member
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         public T? Value
         {
@@ -37,168 +35,286 @@ namespace MyWPF
             }
             set
             {
-                if (!_value.Equals(value))
+                if (_value == null || !_value.Equals(value))
                 {
                     _value = value;
                     OnPropertyChanged();
                 }
             }
         }
-        // Need to be public to implement the derived interface member
-        public event PropertyChangedEventHandler? PropertyChanged;
+        private void OnPropertyChanged()
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Value"));
+        }
+
     }
 
     public partial class MainWindow : Window
     {
-        private enum Op { Add, Subtract, Multiply, Divide, None };
+        private static double MAX_DISPLAYABLE = 1e15;
+        private enum Op { Add, Subtract, Multiply, Divide, Equal, None };
         private Op CurrentOp = Op.None;
-        private float MainResult = 0.0f;
-        private float ChildResult = 0.0f;
+        private double[] Expr = new double[3] { 0, 0, 0 };  // LeftOp, RightOp, Result
+        private int CurrentExprElement = 0;
+        private bool IsCurrentExprElementModifiable = true;
 
         // XAML bindings, need to be public so they can be resolved at runtime?
-        ObservableObject<string> MainViewer = new ObservableObject<string>();
-        ObservableObject<string> ChildViewer = new ObservableObject<string>();
-        // TODO: public uint NumPressed { get; set; }
+        ObservableObject<string> CurrentExprElementDisplay = new ObservableObject<string>();
+        ObservableObject<string> CurrentOpDisplay = new ObservableObject<string>();
 
+        // TODO: public uint NumPressed { get; set; }
+        // TODO: automatically call setdisplays() if the current op is modified, or one of the entry in expr is modified
         public MainWindow()
         {
             InitializeComponent();
 
             // Init Value
-            MainViewer.Value = $"{MainResult}";
-            ChildViewer.Value = $"{ChildResult}";
+            CurrentExprElementDisplay.Value = "0";
+            CurrentOpDisplay.Value = "";
 
             // Data Context
-            MainViewerBlock.DataContext = MainViewer;
-            ChildViewerBlock.DataContext = ChildViewer;
+            MainDisplay.DataContext = CurrentExprElementDisplay;
+            ChildDisplay.DataContext = CurrentOpDisplay;
         }
 
-        private float Eval(Op op = Op.None, float opLeft = 0.0f, float opRight = 0.0f)
+        private void Eval()
         {
-            switch (op)
+            if (CurrentExprElement == 2)
             {
-                case Op.Add: return opLeft + opRight;
-                case Op.Subtract: return opLeft - opRight;
-                case Op.Divide: return opLeft / opRight;
-                case Op.Multiply: return opLeft * opRight;
-                default: return 0.0f;
+                Expr[0] = Expr[2];
             }
-        }
-
-        private float IncrementDecimalPlace(float target = 0.0f, float value = 0.0f)
-        {
-            if (target == 0.0f) return value;
-            else return target * 10 + value;
-        }
-
-        private string CreateViewer(float value = 0.0f, Op op = Op.None)
-        {
-            string viewer = "";
-            int quotient = (int)(value / 1000);
-            int remainder = (int)(value % 1000);
-            if (quotient == 0)
-            { // TODO: decimal
-                viewer = $"{value}";
-            }
-            else
+            try
             {
-                // 12345678 -> 12,345,678
-                // 12345678/1000 -> 12345, 678
-                // 12345/1000 -> 12, 345
-                // 12/1000 -> 0, ...
-                while(quotient > 0)
+                checked
                 {
-                    viewer = "," + remainder + viewer;
-                    remainder = (int)(quotient % 1000);
-                    quotient = (int)(quotient / 1000);
+                    switch (CurrentOp)
+                    {
+                        case Op.Add: Expr[2] = Expr[0] + Expr[1]; break;
+                        case Op.Subtract: Expr[2] = Expr[0] - Expr[1]; break;
+                        case Op.Divide: Expr[2] = Expr[0] / Expr[1]; break;
+                        case Op.Multiply: Expr[2] = Expr[0] * Expr[1]; break;
+                        default: Expr[2] = 0; return;
+                    }
+                    CurrentExprElement = 2;
                 }
-                viewer = quotient + viewer;
             }
-            switch (op)
+            catch (OverflowException Except)
             {
-                case Op.Add: viewer += " +"; break;
-                case Op.Subtract: viewer += " -"; break;
-                case Op.Multiply: viewer += " *"; break;
-                case Op.Divide: viewer += " /"; break;
+                Expr[2] = 0;
+            }
+        }
+
+        // Generic functions
+        private void AppendCurrentExprElement(double Value = 0)
+        {
+            if (IsCurrentExprElementModifiable)
+            {
+                IsCurrentExprElementModifiable = false;
+                Expr[CurrentExprElement] = Value;
+                return;
+            }
+            try
+            {
+                checked
+                {
+                    double Temp = Expr[CurrentExprElement] * 10 + Value;
+                    Expr[CurrentExprElement] = Temp < MAX_DISPLAYABLE ? Temp : Expr[CurrentExprElement];
+                }
+            }
+            catch(OverflowException e)
+            {
+                Expr[CurrentExprElement] = 0;
+            }
+        }
+
+        private string CurrentOpToStr()
+        {
+            switch (CurrentOp)
+            {
+                case Op.Add: return " + ";
+                case Op.Subtract: return " - ";
+                case Op.Divide: return " / ";
+                case Op.Multiply: return " * ";
+                case Op.Equal: return " = ";
+                default: return "";
+            }
+        }
+
+        private string ExprElementToStr(int index)
+        {
+            return Expr[index].ToString(Expr[index] < MAX_DISPLAYABLE ? "N0" : "E");
+        }
+
+        private void SetDisplays()
+        {
+            CurrentExprElementDisplay.Value = $"{ExprElementToStr(CurrentExprElement)}";
+            string OpStr = CurrentOpToStr();
+            switch (CurrentExprElement)
+            {
+                case 0: CurrentOpDisplay.Value = ""; break;
+                case 1: CurrentOpDisplay.Value = $"{ExprElementToStr(0)}" + OpStr; break;
+                case 2: CurrentOpDisplay.Value = $"{ExprElementToStr(0)}" + OpStr + $"{ExprElementToStr(1)} = "; break;
                 default: break;
             }
-            return viewer;
         }
 
+        // Events
         private void Nine_Click(object sender, RoutedEventArgs e)
         {
-            MainResult = IncrementDecimalPlace(MainResult, 9.0f);
-            MainViewer.Value = CreateViewer(MainResult);
+            AppendCurrentExprElement(9);
+            SetDisplays();
         }
 
         private void Eight_Click(object sender, RoutedEventArgs e)
         {
-            MainResult = IncrementDecimalPlace(MainResult, 8.0f);
+            AppendCurrentExprElement(8);
+            SetDisplays();
         }
 
         private void Seven_Click(object sender, RoutedEventArgs e)
         {
-            MainResult = IncrementDecimalPlace(MainResult, 7.0f);
-
+            AppendCurrentExprElement(7);
+            SetDisplays();
         }
+
         private void Six_Click(object sender, RoutedEventArgs e)
         {
-            MainResult = IncrementDecimalPlace(MainResult, 6.0f);
-
+            AppendCurrentExprElement(6);
+            SetDisplays();
         }
 
         private void Five_Click(object sender, RoutedEventArgs e)
         {
-            MainResult = IncrementDecimalPlace(MainResult, 5.0f);
-
+            AppendCurrentExprElement(5);
+            SetDisplays();
         }
+
         private void Four_Click(object sender, RoutedEventArgs e)
         {
-            MainResult = IncrementDecimalPlace(MainResult, 4.0f);
-
+            AppendCurrentExprElement(4);
+            SetDisplays();
         }
 
         private void Three_Click(object sender, RoutedEventArgs e)
         {
-            MainResult = IncrementDecimalPlace(MainResult, 3.0f);
-
+            AppendCurrentExprElement(3);
+            SetDisplays();
         }
+
         private void Two_Click(object sender, RoutedEventArgs e)
         {
-            MainResult = IncrementDecimalPlace(MainResult, 2.0f);
-
+            AppendCurrentExprElement(2);
+            SetDisplays();
         }
 
         private void One_Click(object sender, RoutedEventArgs e)
         {
-            MainResult = IncrementDecimalPlace(MainResult, 1.0f);
-
+            AppendCurrentExprElement(1);
+            SetDisplays();
         }
 
         private void Zero_Click(object sender, RoutedEventArgs e)
         {
-            MainResult = IncrementDecimalPlace(MainResult);
+            AppendCurrentExprElement(0);
+            SetDisplays();
+        }
+
+        private void UpdateExprPostCurrentOpUpdated()
+        {
+            switch (CurrentExprElement)
+            {
+                case 0: Expr[1] = Expr[0]; break;
+                case 1: Expr[0] = Expr[1]; break;
+                case 2:
+                    {
+                        Expr[0] = Expr[2];
+                        Expr[1] = Expr[2];
+                        Expr[2] = 0;
+                    } break;
+                default: break;
+            }
+            CurrentExprElement = 1;
+            IsCurrentExprElementModifiable = true;
+        }
+
+        private void OnCurrentOpModified()
+        {
+            UpdateExprPostCurrentOpUpdated();
+            SetDisplays();
         }
 
         private void Multiply_Click(object sender, RoutedEventArgs e)
         {
-            ChildViewer.Value = MainResult;
-
+            CurrentOp = Op.Multiply;
+            OnCurrentOpModified();
         }
 
         private void Subtract_Click(object sender, RoutedEventArgs e)
         {
-
+            CurrentOp = Op.Subtract;
+            OnCurrentOpModified();
         }
 
         private void Add_Click(object sender, RoutedEventArgs e)
         {
-
+            CurrentOp = Op.Add;
+            OnCurrentOpModified();
         }
 
         private void Divide_Click(object sender, RoutedEventArgs e)
         {
+            CurrentOp = Op.Divide;
+            OnCurrentOpModified();
+        }
 
+        private void Equal_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentOp != Op.Equal && CurrentOp != Op.None)
+            {
+                Eval();
+                SetDisplays();
+            }
+            else
+            {
+                CurrentOp = Op.Equal;
+                OnCurrentOpModified();
+            }
+        }
+
+        private void ClearExpr()
+        {
+            Expr[0] = 0;
+            Expr[1] = 0;
+            Expr[2] = 0;
+            CurrentExprElement = 0;
+        }
+
+        private void Clear_Click(object sender, RoutedEventArgs e)
+        {
+            ClearExpr();
+            SetDisplays();
+        }
+
+        private void ClearEntry_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentExprElement == 2)
+            {
+                ClearExpr();
+            }
+            else
+            {
+                Expr[CurrentExprElement] = 0;
+            }
+            SetDisplays();
+        }
+
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            //delegate ProcessNumber Delegates[] = { One_Click, Two_Click, Three_Click, Four_Click, ... };
+            //if (e.Key >= Key.D0 && e.Key <= Key.D9)
+            //{
+            //    Delegates[e.Key - Key.D0].Invoke(this, e);
+            //}
         }
     }
 }
@@ -208,4 +324,4 @@ namespace MyWPF
 
 
 
-
+ 
