@@ -296,7 +296,9 @@
                 <ColumnDefinition Width="25*"/>
             </Grid.ColumnDefinitions>
             <Button
+                Name="Negate"
                 Content="Negate"
+                Click="Negate_Click"
                 Foreground="{StaticResource Foreground}"
                 Background="{StaticResource Background}"
                 />
@@ -308,7 +310,9 @@
                 Background="{StaticResource Background}"
                 />
             <Button Grid.Column="2"
+                Name="Seperator"
                 Content="."
+                Click="Seperator_Click"
                 Foreground="{StaticResource Foreground}"
                 Background="{StaticResource Background}"
                 />

@@ -23,10 +23,11 @@ namespace MyWPF
     // Turn this class into a struct?
     public class ObservableObject<T> : INotifyPropertyChanged
     {
-        private T _value;
         // Need to be public to implement the derived interface member
         public event PropertyChangedEventHandler? PropertyChanged;
+        public Action? OnPropertyChangedAction { get; set; }
 
+        private T? _value;
         public T? Value
         {
             get
@@ -38,24 +39,26 @@ namespace MyWPF
                 if (_value == null || !_value.Equals(value))
                 {
                     _value = value;
+                    OnPropertyChangedAction?.Invoke();
                     OnPropertyChanged();
                 }
             }
         }
+
         private void OnPropertyChanged()
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Value"));
         }
-
     }
 
     public partial class MainWindow : Window
     {
         private static double MAX_DISPLAYABLE = 1e15;
+        private static string[] OpToStr = { "+", "-", "*", "/", "=", "" };
         private enum Op { Add, Subtract, Multiply, Divide, Equal, None };
         private Op CurrentOp = Op.None;
-        private double[] Expr = new double[3] { 0, 0, 0 };  // LeftOp, RightOp, Result
-        private int CurrentExprElement = 0;
+        private ObservableObject<double>[] Expr = new ObservableObject<double>[3];  // LeftOp, RightOp, Result
+        private ObservableObject<int> CurrentExprElement = new ObservableObject<int>();
         private bool IsCurrentExprElementModifiable = true;
 
         // XAML bindings, need to be public so they can be resolved at runtime?
@@ -64,11 +67,20 @@ namespace MyWPF
 
         // TODO: public uint NumPressed { get; set; }
         // TODO: automatically call setdisplays() if the current op is modified, or one of the entry in expr is modified
+        // TODO: automatically set iscurrentmodifiable when currentexprelement changed and set it to false when the expr[currentexprelement] is modifed after copying from the preivuos index
         public MainWindow()
         {
             InitializeComponent();
 
             // Init Value
+            for (int i = 0; i < 3; i++)
+            {
+                Expr[i] = new ObservableObject<double>();
+                Expr[i].Value = 0;
+                Expr[i].OnPropertyChangedAction += SetDisplays;
+            }
+            CurrentExprElement.Value = 0;
+            CurrentExprElement.OnPropertyChangedAction += () => { IsCurrentExprElementModifiable = true; SetDisplays(); };
             CurrentExprElementDisplay.Value = "0";
             CurrentOpDisplay.Value = "";
 
@@ -77,79 +89,52 @@ namespace MyWPF
             ChildDisplay.DataContext = CurrentOpDisplay;
         }
 
-        private void Eval()
-        {
-            if (CurrentExprElement == 2)
-            {
-                Expr[0] = Expr[2];
-            }
-            try
-            {
-                checked
-                {
-                    switch (CurrentOp)
-                    {
-                        case Op.Add: Expr[2] = Expr[0] + Expr[1]; break;
-                        case Op.Subtract: Expr[2] = Expr[0] - Expr[1]; break;
-                        case Op.Divide: Expr[2] = Expr[0] / Expr[1]; break;
-                        case Op.Multiply: Expr[2] = Expr[0] * Expr[1]; break;
-                        default: Expr[2] = 0; return;
-                    }
-                    CurrentExprElement = 2;
-                }
-            }
-            catch (OverflowException Except)
-            {
-                Expr[2] = 0;
-            }
-        }
-
         // Generic functions
         private void AppendCurrentExprElement(double Value = 0)
         {
             if (IsCurrentExprElementModifiable)
             {
+                Expr[CurrentExprElement.Value].Value = Value;
                 IsCurrentExprElementModifiable = false;
-                Expr[CurrentExprElement] = Value;
                 return;
             }
             try
             {
                 checked
                 {
-                    double Temp = Expr[CurrentExprElement] * 10 + Value;
-                    Expr[CurrentExprElement] = Temp < MAX_DISPLAYABLE ? Temp : Expr[CurrentExprElement];
+                    double Temp = Expr[CurrentExprElement.Value].Value * 10 + Value;
+                    if (Temp < MAX_DISPLAYABLE)
+                    {
+                        Expr[CurrentExprElement.Value].Value = Temp;
+                    }
                 }
             }
             catch(OverflowException e)
             {
-                Expr[CurrentExprElement] = 0;
-            }
-        }
-
-        private string CurrentOpToStr()
-        {
-            switch (CurrentOp)
-            {
-                case Op.Add: return " + ";
-                case Op.Subtract: return " - ";
-                case Op.Divide: return " / ";
-                case Op.Multiply: return " * ";
-                case Op.Equal: return " = ";
-                default: return "";
+                Expr[CurrentExprElement.Value].Value = 0;
             }
         }
 
         private string ExprElementToStr(int index)
         {
-            return Expr[index].ToString(Expr[index] < MAX_DISPLAYABLE ? "N0" : "E");
+            string ElemStr = Expr[index].Value.ToString();
+            int SeperatorIndex = ElemStr.IndexOf(".");
+            int NumDecimals = 0;
+            // In the case "." is pressed, this "if" should fail because the
+            // seperator is only shown on the display but not in the
+            // Expr[index]
+            if (SeperatorIndex != -1)
+            {
+                NumDecimals = ElemStr.Substring(SeperatorIndex + 1).Length;
+            }
+            return Expr[index].Value.ToString(Expr[index].Value < MAX_DISPLAYABLE ? "N" + $"{NumDecimals}" : "E");
         }
 
         private void SetDisplays()
         {
-            CurrentExprElementDisplay.Value = $"{ExprElementToStr(CurrentExprElement)}";
-            string OpStr = CurrentOpToStr();
-            switch (CurrentExprElement)
+            CurrentExprElementDisplay.Value = $"{ExprElementToStr(CurrentExprElement.Value)}";
+            string OpStr = OpToStr[(int)CurrentOp];
+            switch (CurrentExprElement.Value)
             {
                 case 0: CurrentOpDisplay.Value = ""; break;
                 case 1: CurrentOpDisplay.Value = $"{ExprElementToStr(0)}" + OpStr; break;
@@ -162,109 +147,119 @@ namespace MyWPF
         private void Nine_Click(object sender, RoutedEventArgs e)
         {
             AppendCurrentExprElement(9);
-            SetDisplays();
         }
 
         private void Eight_Click(object sender, RoutedEventArgs e)
         {
             AppendCurrentExprElement(8);
-            SetDisplays();
         }
 
         private void Seven_Click(object sender, RoutedEventArgs e)
         {
             AppendCurrentExprElement(7);
-            SetDisplays();
         }
 
         private void Six_Click(object sender, RoutedEventArgs e)
         {
             AppendCurrentExprElement(6);
-            SetDisplays();
         }
 
         private void Five_Click(object sender, RoutedEventArgs e)
         {
             AppendCurrentExprElement(5);
-            SetDisplays();
         }
 
         private void Four_Click(object sender, RoutedEventArgs e)
         {
             AppendCurrentExprElement(4);
-            SetDisplays();
         }
 
         private void Three_Click(object sender, RoutedEventArgs e)
         {
             AppendCurrentExprElement(3);
-            SetDisplays();
         }
 
         private void Two_Click(object sender, RoutedEventArgs e)
         {
             AppendCurrentExprElement(2);
-            SetDisplays();
         }
 
         private void One_Click(object sender, RoutedEventArgs e)
         {
             AppendCurrentExprElement(1);
-            SetDisplays();
         }
 
         private void Zero_Click(object sender, RoutedEventArgs e)
         {
             AppendCurrentExprElement(0);
-            SetDisplays();
         }
 
         private void UpdateExprPostCurrentOpUpdated()
         {
-            switch (CurrentExprElement)
+            switch (CurrentExprElement.Value)
             {
-                case 0: Expr[1] = Expr[0]; break;
-                case 1: Expr[0] = Expr[1]; break;
+                case 0: Expr[1].Value = Expr[0].Value; break;
+                case 1: Expr[0].Value = Expr[1].Value; break;
                 case 2:
                     {
-                        Expr[0] = Expr[2];
-                        Expr[1] = Expr[2];
-                        Expr[2] = 0;
+                        Expr[0].Value = Expr[2].Value;
+                        Expr[1].Value = Expr[2].Value;
+                        Expr[2].Value = 0;
                     } break;
                 default: break;
             }
-            CurrentExprElement = 1;
-            IsCurrentExprElementModifiable = true;
-        }
-
-        private void OnCurrentOpModified()
-        {
-            UpdateExprPostCurrentOpUpdated();
-            SetDisplays();
+            CurrentExprElement.Value = 1;
         }
 
         private void Multiply_Click(object sender, RoutedEventArgs e)
         {
             CurrentOp = Op.Multiply;
-            OnCurrentOpModified();
+            UpdateExprPostCurrentOpUpdated();
         }
 
         private void Subtract_Click(object sender, RoutedEventArgs e)
         {
             CurrentOp = Op.Subtract;
-            OnCurrentOpModified();
+            UpdateExprPostCurrentOpUpdated();
         }
 
         private void Add_Click(object sender, RoutedEventArgs e)
         {
             CurrentOp = Op.Add;
-            OnCurrentOpModified();
+            UpdateExprPostCurrentOpUpdated();
         }
 
         private void Divide_Click(object sender, RoutedEventArgs e)
         {
             CurrentOp = Op.Divide;
-            OnCurrentOpModified();
+            UpdateExprPostCurrentOpUpdated();
+        }
+        private void Eval()
+        {
+            if (CurrentExprElement.Value == 2)
+            {
+                Expr[0].Value = Expr[2].Value;
+            }
+            try
+            {
+                checked
+                {
+                    switch (CurrentOp)
+                    {
+                        case Op.Add: Expr[2].Value = Expr[0].Value + Expr[1].Value; break;
+                        case Op.Subtract: Expr[2].Value = Expr[0].Value - Expr[1].Value; break;
+                        case Op.Divide: Expr[2].Value = Expr[0].Value / Expr[1].Value; break;
+                        case Op.Multiply: Expr[2].Value = Expr[0].Value * Expr[1].Value; break;
+                        default: Expr[2].Value = 0; return;
+                    }
+                    CurrentExprElement.Value = 2;
+                }
+            }
+            catch (OverflowException Except)
+            {
+                Expr[2].Value = 0;
+                MessageBox.Show(Except.Message);
+            }
         }
 
         private void Equal_Click(object sender, RoutedEventArgs e)
@@ -272,40 +267,47 @@ namespace MyWPF
             if (CurrentOp != Op.Equal && CurrentOp != Op.None)
             {
                 Eval();
-                SetDisplays();
             }
             else
             {
                 CurrentOp = Op.Equal;
-                OnCurrentOpModified();
+                UpdateExprPostCurrentOpUpdated();
             }
         }
 
         private void ClearExpr()
         {
-            Expr[0] = 0;
-            Expr[1] = 0;
-            Expr[2] = 0;
-            CurrentExprElement = 0;
+            Expr[0].Value = 0;
+            Expr[1].Value = 0;
+            Expr[2].Value = 0;
+            CurrentExprElement.Value = 0;
         }
 
         private void Clear_Click(object sender, RoutedEventArgs e)
         {
             ClearExpr();
-            SetDisplays();
         }
 
         private void ClearEntry_Click(object sender, RoutedEventArgs e)
         {
-            if (CurrentExprElement == 2)
+            if (CurrentExprElement.Value == 2)
             {
                 ClearExpr();
             }
             else
             {
-                Expr[CurrentExprElement] = 0;
+                Expr[CurrentExprElement.Value].Value = 0;
             }
-            SetDisplays();
+        }
+
+        private void Negate_Click(object sender, RoutedEventArgs e)
+        {
+            Expr[CurrentExprElement.Value].Value *= -1;
+        }
+
+        private void Seperator_Click(object sender, RoutedEventArgs e)
+        {
+
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
