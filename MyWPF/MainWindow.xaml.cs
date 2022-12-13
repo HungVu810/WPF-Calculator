@@ -53,7 +53,7 @@ namespace MyWPF
 
     public partial class MainWindow : Window
     {
-        private static double MAX_DISPLAYABLE = 1e15;
+        private static double MAX_DISPLAYABLE = 1e15; // MAX_DIGITS = 16 by expr[i].tostring then check for their length < max_digits (length - 1 if has decimal point)
         private static string[] OpToStr = { " + ", " - ", " * ", " / ", " = ", "" };
         private enum Op { Add, Subtract, Multiply, Divide, Equal, None };
         private Op CurrentOp = Op.None;
@@ -103,27 +103,23 @@ namespace MyWPF
             {
                 checked
                 {
-                    if (CurrentExprElementDisplay.Value == null) return;
-                    int? DecPointIndex = CurrentExprElementDisplay.Value.IndexOf('.');
-                    if (DecPointIndex != null && DecPointIndex != -1) // Floating point
-                    {
-                        string Temp = CurrentExprElementDisplay.Value;
-                        for (char i = '1'; i < '9'; i++)
-                        {
-                            Temp = Temp.Replace(i, '0');
-                        }
-                        Temp += "1"; // turn the elem into 0--0.00--01
-                        double NormDecimal = double.Parse(Temp); // 0.00--01
-                        Expr[CurrentExprElement.Value].Value += NormDecimal * Value;
-                    }
-                    else // Normal integer
-                    {
-                        double Temp = Expr[CurrentExprElement.Value].Value * 10 + Value;
-                        if (Temp < MAX_DISPLAYABLE)
-                        {
-                            Expr[CurrentExprElement.Value].Value = Temp;
-                        }
-                    }
+                    //if (CurrentExprElementDisplay.Value == null) return;
+                    //int? DecPointIndex = CurrentExprElementDisplay.Value.IndexOf('.');
+                    //if (DecPointIndex != null && DecPointIndex != -1) // Floating point
+                    //{
+                    //    CurrentExprElementDisplay.Value += (char)('0' + Value);
+                    //    Expr[CurrentExprElement.Value].Value = double.Parse(CurrentExprElementDisplay.Value);
+                    //}
+                    //else // Normal integer
+                    //{
+                    //    double Temp = Expr[CurrentExprElement.Value].Value * 10 + Value;
+                    //    if (Temp < MAX_DISPLAYABLE)
+                    //    {
+                    //        Expr[CurrentExprElement.Value].Value = Temp;
+                    //    }
+                    //}
+                    CurrentExprElementDisplay.Value += (char)('0' + Value);
+                    Expr[CurrentExprElement.Value].Value = double.Parse(CurrentExprElementDisplay.Value);
                 }
             }
             catch(Exception Ex)
@@ -350,6 +346,12 @@ namespace MyWPF
             }
         }
 
+        // TODO: add functionalities for the M... buttons
+        // TODO: add memory funcitonality
+        // TODO: register user numpad/num keypressed
+        // TODO: automatically change the color via the system color value (use callback on value changed ?)
+            // https://learn.microsoft.com/en-us/windows/win32/api/winreg/nf-winreg-regnotifychangekeyvalue
+        // TODO: add change color options to the option 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
             //delegate ProcessNumber Delegates[] = { One_Click, Two_Click, Three_Click, Four_Click, ... };
@@ -357,6 +359,53 @@ namespace MyWPF
             //{
             //    Delegates[e.Key - Key.D0].Invoke(this, e);
             //}
+        }
+
+        private void Percentage_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentExprElement.Value == 1)
+            {
+                Expr[1].Value *= Expr[0].Value / 100;
+                IsCurrentExprElementModifiable = true;
+            }
+            else
+            {
+                ClearExpr();
+            }
+        }
+
+        private void DeleteDigit_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentExprElementDisplay.Value == null) return;
+            int? DecPointIndex = CurrentExprElementDisplay.Value.IndexOf('.');
+            if (DecPointIndex != null && DecPointIndex != -1) // Floating point
+            {
+                int LastIndex = CurrentExprElementDisplay.Value.Length - 1;
+                string Temp = CurrentExprElementDisplay.Value.Remove(LastIndex);
+                Expr[CurrentExprElement.Value].Value = double.Parse(Temp);
+            }
+            else // Normal integer
+            {
+                Expr[CurrentExprElement.Value].Value = Math.Floor(Expr[CurrentExprElement.Value].Value / 10);
+            }
+        }
+
+        private void Reciprocal_Click(object sender, RoutedEventArgs e)
+        {
+            Expr[CurrentExprElement.Value].Value = Math.Pow(Expr[CurrentExprElement.Value].Value, -1);
+            IsCurrentExprElementModifiable = false;
+        }
+
+        private void Squared_Click(object sender, RoutedEventArgs e)
+        {
+            Expr[CurrentExprElement.Value].Value = Math.Pow(Expr[CurrentExprElement.Value].Value, 2);
+            IsCurrentExprElementModifiable = false;
+        }
+
+        private void SquareRoot_Click(object sender, RoutedEventArgs e)
+        {
+            Expr[CurrentExprElement.Value].Value = Math.Sqrt(Expr[CurrentExprElement.Value].Value);
+            IsCurrentExprElementModifiable = false;
         }
     }
 }

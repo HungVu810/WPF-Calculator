@@ -126,7 +126,9 @@
                 <ColumnDefinition Width="25*"/>
             </Grid.ColumnDefinitions>
             <Button
+                Name="Percentage"
                 Content="%"
+                Click="Percentage_Click"
                 Foreground="{StaticResource Foreground}"
                 Background="{StaticResource Background}"
                 />
@@ -145,7 +147,9 @@
                 Background="{StaticResource Background}"
                 />
             <Button Grid.Column="3"
+                Name="DeleteDigit"
                 Content="&lt;X"
+                Click="DeleteDigit_Click"
                 Foreground="{StaticResource Foreground}"
                 Background="{StaticResource Background}"
                 />
@@ -158,17 +162,23 @@
                 <ColumnDefinition Width="25*"/>
             </Grid.ColumnDefinitions>
             <Button
+                Name="Reciprocal"
                 Content="1/x"
+                Click="Reciprocal_Click"
                 Foreground="{StaticResource Foreground}"
                 Background="{StaticResource Background}"
                 />
             <Button Grid.Column="1"
+                Name="Squared"
                 Content="x^2"
+                Click="Squared_Click"
                 Foreground="{StaticResource Foreground}"
                 Background="{StaticResource Background}"
                 />
             <Button Grid.Column="2"
+                Name="SquareRoot"
                 Content="sqrt(x)"
+                Click="SquareRoot_Click"
                 Foreground="{StaticResource Foreground}"
                 Background="{StaticResource Background}"
                 />
