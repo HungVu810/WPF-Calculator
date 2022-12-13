@@ -54,7 +54,7 @@ namespace MyWPF
     public partial class MainWindow : Window
     {
         private static double MAX_DISPLAYABLE = 1e15;
-        private static string[] OpToStr = { "+", "-", "*", "/", "=", "" };
+        private static string[] OpToStr = { " + ", " - ", " * ", " / ", " = ", "" };
         private enum Op { Add, Subtract, Multiply, Divide, Equal, None };
         private Op CurrentOp = Op.None;
         private ObservableObject<double>[] Expr = new ObservableObject<double>[3];  // LeftOp, RightOp, Result
@@ -90,8 +90,9 @@ namespace MyWPF
         }
 
         // Generic functions
-        private void AppendCurrentExprElement(double Value = 0)
+        private void AppendCurrentExprElement(uint Value = 0)
         {
+            if (Value > 9) return;
             if (IsCurrentExprElementModifiable)
             {
                 Expr[CurrentExprElement.Value].Value = Value;
@@ -102,16 +103,33 @@ namespace MyWPF
             {
                 checked
                 {
-                    double Temp = Expr[CurrentExprElement.Value].Value * 10 + Value;
-                    if (Temp < MAX_DISPLAYABLE)
+                    if (CurrentExprElementDisplay.Value == null) return;
+                    int? DecPointIndex = CurrentExprElementDisplay.Value.IndexOf('.');
+                    if (DecPointIndex != null && DecPointIndex != -1) // Floating point
                     {
-                        Expr[CurrentExprElement.Value].Value = Temp;
+                        string Temp = CurrentExprElementDisplay.Value;
+                        for (char i = '1'; i < '9'; i++)
+                        {
+                            Temp = Temp.Replace(i, '0');
+                        }
+                        Temp += "1"; // turn the elem into 0--0.00--01
+                        double NormDecimal = double.Parse(Temp); // 0.00--01
+                        Expr[CurrentExprElement.Value].Value += NormDecimal * Value;
+                    }
+                    else // Normal integer
+                    {
+                        double Temp = Expr[CurrentExprElement.Value].Value * 10 + Value;
+                        if (Temp < MAX_DISPLAYABLE)
+                        {
+                            Expr[CurrentExprElement.Value].Value = Temp;
+                        }
                     }
                 }
             }
-            catch(OverflowException e)
+            catch(Exception Ex)
             {
                 Expr[CurrentExprElement.Value].Value = 0;
+                MessageBox.Show(Ex.Message);
             }
         }
 
@@ -127,6 +145,7 @@ namespace MyWPF
             {
                 NumDecimals = ElemStr.Substring(SeperatorIndex + 1).Length;
             }
+            // if (DecPointIndex + 1 >= CurrentExprElementDisplay.Value.Length) return;
             return Expr[index].Value.ToString(Expr[index].Value < MAX_DISPLAYABLE ? "N" + $"{NumDecimals}" : "E");
         }
 
@@ -213,24 +232,40 @@ namespace MyWPF
 
         private void Multiply_Click(object sender, RoutedEventArgs e)
         {
+            if (CurrentOp != Op.None)
+            {
+                Eval();
+            }
             CurrentOp = Op.Multiply;
             UpdateExprPostCurrentOpUpdated();
         }
 
         private void Subtract_Click(object sender, RoutedEventArgs e)
         {
+            if (CurrentOp != Op.None)
+            {
+                Eval();
+            }
             CurrentOp = Op.Subtract;
             UpdateExprPostCurrentOpUpdated();
         }
 
         private void Add_Click(object sender, RoutedEventArgs e)
         {
+            if (CurrentOp != Op.None)
+            {
+                Eval();
+            }
             CurrentOp = Op.Add;
             UpdateExprPostCurrentOpUpdated();
         }
 
         private void Divide_Click(object sender, RoutedEventArgs e)
         {
+            if (CurrentOp != Op.None)
+            {
+                Eval();
+            }
             CurrentOp = Op.Divide;
             UpdateExprPostCurrentOpUpdated();
         }
@@ -255,10 +290,10 @@ namespace MyWPF
                     CurrentExprElement.Value = 2;
                 }
             }
-            catch (OverflowException Except)
+            catch (Exception Ex)
             {
                 Expr[2].Value = 0;
-                MessageBox.Show(Except.Message);
+                MessageBox.Show(Ex.Message);
             }
         }
 
@@ -277,6 +312,7 @@ namespace MyWPF
 
         private void ClearExpr()
         {
+            CurrentOp = Op.None;
             Expr[0].Value = 0;
             Expr[1].Value = 0;
             Expr[2].Value = 0;
@@ -307,7 +343,11 @@ namespace MyWPF
 
         private void Seperator_Click(object sender, RoutedEventArgs e)
         {
-
+            if (CurrentExprElementDisplay.Value.IndexOf('.') == -1)
+            {
+                CurrentExprElementDisplay.Value += ".";
+                IsCurrentExprElementModifiable = false;
+            }
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
