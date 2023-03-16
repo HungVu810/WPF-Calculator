@@ -53,9 +53,9 @@ namespace MyWPF
 
     public partial class MainWindow : Window
     {
-        private static double MAX_DISPLAYABLE = 1e15; // MAX_DIGITS = 16 by expr[i].tostring then check for their length < max_digits (length - 1 if has decimal point)
+        private static double MAX_NUM_DIGITS = 16; // MAX_DIGITS = 16 by expr[i].tostring then check for their length < max_digits (length - 1 if has decimal point)
         private static string[] OpToStr = { " + ", " - ", " * ", " / ", " = ", "" };
-        private enum Op { Add, Subtract, Multiply, Divide, Equal, None };
+        private enum Op { Add, Subtract, Multiply, Divide, None };
         private Op CurrentOp = Op.None;
         private ObservableObject<double>[] Expr = new ObservableObject<double>[3];  // LeftOp, RightOp, Result
         private ObservableObject<int> CurrentExprElement = new ObservableObject<int>();
@@ -118,6 +118,16 @@ namespace MyWPF
                     //        Expr[CurrentExprElement.Value].Value = Temp;
                     //    }
                     //}
+                    if (CurrentExprElementDisplay.Value == null) return;
+                    int? DecPointIndex = CurrentExprElementDisplay.Value.IndexOf('.');
+                    if (DecPointIndex != null && DecPointIndex != -1) // Floating point
+                    {
+                        if (CurrentExprElementDisplay.Value.Length - 1 >= MAX_NUM_DIGITS) return; // Subtract 1 to ignore the decimal point
+                    }
+                    else
+                    {
+                        if (CurrentExprElementDisplay.Value.Length >= MAX_NUM_DIGITS) return; // Subtract 1 to ignore the decimal point
+                    }
                     CurrentExprElementDisplay.Value += (char)('0' + Value);
                     Expr[CurrentExprElement.Value].Value = double.Parse(CurrentExprElementDisplay.Value);
                 }
@@ -141,8 +151,8 @@ namespace MyWPF
             {
                 NumDecimals = ElemStr.Substring(SeperatorIndex + 1).Length;
             }
-            // if (DecPointIndex + 1 >= CurrentExprElementDisplay.Value.Length) return;
-            return Expr[index].Value.ToString(Expr[index].Value < MAX_DISPLAYABLE ? "N" + $"{NumDecimals}" : "E");
+            // return Expr[index].Value.ToString(Expr[index].Value < MAX_DISPLAYABLE ? "N" + $"{NumDecimals}" : "E");
+            return Expr[index].Value.ToString("N" + $"{NumDecimals}");
         }
 
         private void SetDisplays()
@@ -228,7 +238,7 @@ namespace MyWPF
 
         private void Multiply_Click(object sender, RoutedEventArgs e)
         {
-            if (CurrentOp != Op.None)
+            if (CurrentExprElement.Value == 1)
             {
                 Eval();
             }
@@ -238,7 +248,7 @@ namespace MyWPF
 
         private void Subtract_Click(object sender, RoutedEventArgs e)
         {
-            if (CurrentOp != Op.None)
+            if (CurrentExprElement.Value == 1)
             {
                 Eval();
             }
@@ -248,7 +258,7 @@ namespace MyWPF
 
         private void Add_Click(object sender, RoutedEventArgs e)
         {
-            if (CurrentOp != Op.None)
+            if (CurrentExprElement.Value == 1)
             {
                 Eval();
             }
@@ -258,13 +268,24 @@ namespace MyWPF
 
         private void Divide_Click(object sender, RoutedEventArgs e)
         {
-            if (CurrentOp != Op.None)
+            if (CurrentExprElement.Value == 1)
             {
                 Eval();
             }
             CurrentOp = Op.Divide;
             UpdateExprPostCurrentOpUpdated();
         }
+
+        private void Equal_Click(object sender, RoutedEventArgs e)
+        {
+            Eval();
+            //if (CurrentOp != Op.None)
+            //{
+
+            //}
+            //CurrentOp = Op.None;
+        }
+
         private void Eval()
         {
             if (CurrentExprElement.Value == 2)
@@ -290,19 +311,6 @@ namespace MyWPF
             {
                 Expr[2].Value = 0;
                 MessageBox.Show(Ex.Message);
-            }
-        }
-
-        private void Equal_Click(object sender, RoutedEventArgs e)
-        {
-            if (CurrentOp != Op.Equal && CurrentOp != Op.None)
-            {
-                Eval();
-            }
-            else
-            {
-                CurrentOp = Op.Equal;
-                UpdateExprPostCurrentOpUpdated();
             }
         }
 
